@@ -71,7 +71,7 @@
 #define FREERTOS_CONFIG_H
 
 #include "stm32f4xx.h"
-#include "bsp_debug_usart.h"
+#include "./usart/bsp_debug_usart.h"
 
 
 //针对不同的编译器调用不同的stdint.h文件
@@ -182,7 +182,7 @@
 //支持动态内存申请
 #define configSUPPORT_DYNAMIC_ALLOCATION        1    
 //支持静态内存
-#define configSUPPORT_STATIC_ALLOCATION					0					
+#define configSUPPORT_STATIC_ALLOCATION					0
 //系统所有总的堆大小
 #define configTOTAL_HEAP_SIZE					((size_t)(36*1024))    
 

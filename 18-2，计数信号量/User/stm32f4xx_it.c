@@ -1,46 +1,54 @@
 /**
   ******************************************************************************
-  * @file    FMC_SDRAM/stm32f4xx_it.c 
+  * @file    GPIO/GPIO_EXTI/Src/stm32f4xx_it.c 
   * @author  MCD Application Team
-  * @version V1.0.1
-  * @date    11-November-2013
   * @brief   Main Interrupt Service Routines.
-  *         This file provides template for all exceptions handler and
-  *         peripherals interrupt service routine.
+  *          This file provides template for all exceptions handler and 
+  *          peripherals interrupt service routine.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2013 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * Redistribution and use in source and binary forms, with or without modification,
+  * are permitted provided that the following conditions are met:
+  *   1. Redistributions of source code must retain the above copyright notice,
+  *      this list of conditions and the following disclaimer.
+  *   2. Redistributions in binary form must reproduce the above copyright notice,
+  *      this list of conditions and the following disclaimer in the documentation
+  *      and/or other materials provided with the distribution.
+  *   3. Neither the name of STMicroelectronics nor the names of its contributors
+  *      may be used to endorse or promote products derived from this software
+  *      without specific prior written permission.
   *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "stm32f4xx_it.h"
 
-#include "FreeRTOS.h"					//FreeRTOS使用		  
+#include "FreeRTOS.h"
 #include "task.h" 
 
-
-/** @addtogroup STM32F429I_DISCOVERY_Examples
+/** @addtogroup STM32F4xx_HAL_Examples
   * @{
   */
 
-/** @addtogroup FMC_SDRAM
+/** @addtogroup GPIO_EXTI
   * @{
-  */ 
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -71,7 +79,8 @@ void HardFault_Handler(void)
 {
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
-  {}
+  {
+  }
 }
 
 /**
@@ -83,7 +92,8 @@ void MemManage_Handler(void)
 {
   /* Go to infinite loop when Memory Manage exception occurs */
   while (1)
-  {}
+  {
+  }
 }
 
 /**
@@ -95,7 +105,8 @@ void BusFault_Handler(void)
 {
   /* Go to infinite loop when Bus Fault exception occurs */
   while (1)
-  {}
+  {
+  }
 }
 
 /**
@@ -107,7 +118,8 @@ void UsageFault_Handler(void)
 {
   /* Go to infinite loop when Usage Fault exception occurs */
   while (1)
-  {}
+  {
+  }
 }
 
 /**
@@ -116,7 +128,8 @@ void UsageFault_Handler(void)
   * @retval None
   */
 void DebugMon_Handler(void)
-{}
+{
+}
 
 
 /**
@@ -125,32 +138,51 @@ void DebugMon_Handler(void)
   * @retval None
   */
 extern void xPortSysTickHandler(void);
-//systick中断服务函数
 void SysTick_Handler(void)
-{	
-    #if (INCLUDE_xTaskGetSchedulerState  == 1 )
-      if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-      {
-    #endif  /* INCLUDE_xTaskGetSchedulerState */  
-        xPortSysTickHandler();
-    #if (INCLUDE_xTaskGetSchedulerState  == 1 )
-      }
-    #endif  /* INCLUDE_xTaskGetSchedulerState */
+{
+	#if (INCLUDE_xTaskGetSchedulerState  == 1 )
+		if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+		{
+	#endif  /* INCLUDE_xTaskGetSchedulerState */  
+		xPortSysTickHandler();
+	#if (INCLUDE_xTaskGetSchedulerState  == 1 )
+		}
+	#endif  /* INCLUDE_xTaskGetSchedulerState */
+  HAL_IncTick();
 }
 
 /******************************************************************************/
 /*                 STM32F4xx Peripherals Interrupt Handlers                   */
 /*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
 /*  available peripheral interrupt handler's name please refer to the startup */
-/*  file (startup_stm32f429_439xx.s).                         */
+/*  file (startup_stm32f4xx.s).                                               */
 /******************************************************************************/
 
 /**
+  * @brief  This function handles External line 0 interrupt request.
+  * @param  None
+  * @retval None
+  */
+void EXTI0_IRQHandler(void)
+{
+  
+}
+
+/**
+  * @brief  This function handles PPP interrupt request.
+  * @param  None
+  * @retval None
+  */
+/*void PPP_IRQHandler(void)
+{
+}*/
+
+/**
   * @}
   */ 
 
 /**
   * @}
-  */ 
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

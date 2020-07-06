@@ -71,7 +71,7 @@
 #define FREERTOS_CONFIG_H
 
 #include "stm32f4xx.h"
-#include "bsp_debug_usart.h"
+#include "./usart/bsp_debug_usart.h"
 
 
 //针对不同的编译器调用不同的stdint.h文件
@@ -162,13 +162,13 @@
 #define configUSE_TASK_NOTIFICATIONS    1   
 
 //使用互斥信号量
-#define configUSE_MUTEXES						    0    
+#define configUSE_MUTEXES						    1    
 
 //使用递归互斥信号量                                            
-#define configUSE_RECURSIVE_MUTEXES			0   
+#define configUSE_RECURSIVE_MUTEXES			1   
 
 //为1时使用计数信号量
-#define configUSE_COUNTING_SEMAPHORES		0
+#define configUSE_COUNTING_SEMAPHORES		1
 
 /* 设置可以注册的信号量和消息队列个数 */
 #define configQUEUE_REGISTRY_SIZE				10                                 
@@ -182,7 +182,7 @@
 //支持动态内存申请
 #define configSUPPORT_DYNAMIC_ALLOCATION        1    
 //支持静态内存
-#define configSUPPORT_STATIC_ALLOCATION					0					
+#define configSUPPORT_STATIC_ALLOCATION					0
 //系统所有总的堆大小
 #define configTOTAL_HEAP_SIZE					((size_t)(36*1024))    
 
@@ -236,13 +236,13 @@
  * vTaskList(),
  * vTaskGetRunTimeStats()
 */
-#define configUSE_STATS_FORMATTING_FUNCTIONS	1     
-
+#define configUSE_STATS_FORMATTING_FUNCTIONS	1                       
+                                                                        
 extern volatile uint32_t CPU_RunTime;
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()     (CPU_RunTime = 0ul)
-#define portGET_RUN_TIME_COUNTER_VALUE()             CPU_RunTime                    
-                                                                                                 
+#define portGET_RUN_TIME_COUNTER_VALUE()             CPU_RunTime         
+								
 /********************************************************************
                 FreeRTOS与协程有关的配置选项                                                
 *********************************************************************/

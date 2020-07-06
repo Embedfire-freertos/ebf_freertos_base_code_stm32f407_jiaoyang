@@ -3,13 +3,13 @@
   * @file    main.c
   * @author  fire
   * @version V1.0
-  * @date    2018-xx-xx
-  * @brief   FreeRTOS v9.0.0 + STM32 
+  * @date    2020-xx-xx
+  * @brief   FreeRTOS v9.0.0 + STM32 工程模版
   *********************************************************************
   * @attention
   *
-  * 实验平台:野火 STM32开发板 
-  * 论坛    :http://www.firebbs.cn
+  * 实验平台:野火 STM32全系列开发板 
+  * 论坛    :http://www.embedfire.com
   * 淘宝    :https://fire-stm32.taobao.com
   *
   **********************************************************************
@@ -23,11 +23,15 @@
 /* FreeRTOS头文件 */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+#include "semphr.h"
+#include "event_groups.h"
+#include "limits.h"
 /* 开发板硬件bsp头文件 */
-#include "bsp_led.h"
-#include "bsp_debug_usart.h"
-#include "./tim/bsp_basic_tim.h"
-#include "string.h"
+#include "board_init.h"
+/* 标准库头文件 */
+#include <string.h>
+
 /**************************** 任务句柄 ********************************/
 /* 
  * 任务句柄是一个指针，用于指向一个任务，当任务创建好之后，它就具有了一个任务句柄
@@ -35,14 +39,14 @@
  * 这个句柄可以为NULL。
  */
  /* 创建任务句柄 */
-static TaskHandle_t AppTaskCreate_Handle = NULL;
-/* LED任务句柄 */
+static TaskHandle_t AppTaskCreate_Handle;
 static TaskHandle_t LED1_Task_Handle = NULL;
 static TaskHandle_t LED2_Task_Handle = NULL;
 static TaskHandle_t CPU_Task_Handle = NULL;
+
 /********************************** 内核对象句柄 *********************************/
 /*
- * 信号量，消息队列，事件标志组，软件定时器这些都属于内核的对象，要想使用这些内核
+ * 互斥量，消息队列，事件标志组，软件定时器这些都属于内核的对象，要想使用这些内核
  * 对象，必须先创建，创建成功之后会返回一个相应的句柄。实际上就是一个指针，后续我
  * 们就可以通过这个句柄操作这些内核对象。
  *
@@ -52,6 +56,8 @@ static TaskHandle_t CPU_Task_Handle = NULL;
  * 
  */
 
+QueueHandle_t Test_Queue =NULL;
+SemaphoreHandle_t BinarySem_Handle =NULL;
 
 /******************************* 全局变量声明 ************************************/
 /*
@@ -69,7 +75,16 @@ static void AppTaskCreate(void);/* 用于创建任务 */
 static void LED1_Task(void* pvParameters);/* LED1_Task任务实现 */
 static void LED2_Task(void* pvParameters);/* LED2_Task任务实现 */
 static void CPU_Task(void* pvParameters);/* CPU_Task任务实现 */
+
 static void BSP_Init(void);/* 用于初始化板载相关资源 */
+
+/******************************* 宏定义 ************************************/
+/*
+ * 当我们在写应用程序的时候，可能需要用到一些宏定义。
+ */
+
+#define  QUEUE_LEN    4   /* 队列的长度，最大可包含多少个消息 */
+#define  QUEUE_SIZE   4   /* 队列中每个消息大小（字节） */
 
 /*****************************************************************
   * @brief  主函数
@@ -82,22 +97,22 @@ static void BSP_Init(void);/* 用于初始化板载相关资源 */
 int main(void)
 {	
   BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
-
+	
   /* 开发板硬件初始化 */
   BSP_Init();
+	
   printf("这是一个[野火]-STM32全系列开发板-FreeRTOS-CPU利用率统计实验!\r\n");
-   /* 创建AppTaskCreate任务 */
+	
+   /* 创建 AppTaskCreate 任务 */
   xReturn = xTaskCreate((TaskFunction_t )AppTaskCreate,  /* 任务入口函数 */
                         (const char*    )"AppTaskCreate",/* 任务名字 */
                         (uint16_t       )512,  /* 任务栈大小 */
                         (void*          )NULL,/* 任务入口函数参数 */
                         (UBaseType_t    )1, /* 任务的优先级 */
                         (TaskHandle_t*  )&AppTaskCreate_Handle);/* 任务控制块指针 */ 
-  /* 启动任务调度 */           
-  if(pdPASS == xReturn)
+															
+	if(pdFAIL != xReturn)/* 创建成功 */
     vTaskStartScheduler();   /* 启动任务，开启调度 */
-  else
-    return -1;  
   
   while(1);   /* 正常不会执行到这里 */    
 }
@@ -112,10 +127,10 @@ int main(void)
 static void AppTaskCreate(void)
 {
   BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
-  
+	
   taskENTER_CRITICAL();           //进入临界区
-  
-  /* 创建LED_Task任务 */
+
+	  /* 创建LED1_Task任务 */
   xReturn = xTaskCreate((TaskFunction_t )LED1_Task, /* 任务入口函数 */
                         (const char*    )"LED1_Task",/* 任务名字 */
                         (uint16_t       )512,   /* 任务栈大小 */
@@ -123,19 +138,19 @@ static void AppTaskCreate(void)
                         (UBaseType_t    )2,	    /* 任务的优先级 */
                         (TaskHandle_t*  )&LED1_Task_Handle);/* 任务控制块指针 */
   if(pdPASS == xReturn)
-    printf("创建LED1_Task任务成功!\r\n");
+    printf("创建 LED1_Task 任务成功!\r\n");
   
-  /* 创建LED_Task任务 */
-  xReturn = xTaskCreate((TaskFunction_t )LED2_Task, /* 任务入口函数 */
+  /* 创建LED2_Task任务 */
+  xReturn = xTaskCreate((TaskFunction_t )LED2_Task,  /* 任务入口函数 */
                         (const char*    )"LED2_Task",/* 任务名字 */
-                        (uint16_t       )512,   /* 任务栈大小 */
-                        (void*          )NULL,	/* 任务入口函数参数 */
-                        (UBaseType_t    )3,	    /* 任务的优先级 */
-                        (TaskHandle_t*  )&LED2_Task_Handle);/* 任务控制块指针 */
+                        (uint16_t       )512,  /* 任务栈大小 */
+                        (void*          )NULL,/* 任务入口函数参数 */
+                        (UBaseType_t    )3, /* 任务的优先级 */
+                        (TaskHandle_t*  )&LED2_Task_Handle);/* 任务控制块指针 */ 
   if(pdPASS == xReturn)
-    printf("创建LED2_Task任务成功!\r\n");
+    printf("创建 LED2_Task 任务成功!\n\n");
 
-  /* 创建LED_Task任务 */
+	/* 创建CPU_Task任务 */
   xReturn = xTaskCreate((TaskFunction_t )CPU_Task, /* 任务入口函数 */
                         (const char*    )"CPU_Task",/* 任务名字 */
                         (uint16_t       )512,   /* 任务栈大小 */
@@ -144,7 +159,7 @@ static void AppTaskCreate(void)
                         (TaskHandle_t*  )&CPU_Task_Handle);/* 任务控制块指针 */
   if(pdPASS == xReturn)
     printf("创建CPU_Task任务成功!\r\n");
-  
+	
   vTaskDelete(AppTaskCreate_Handle); //删除AppTaskCreate任务
   
   taskEXIT_CRITICAL();            //退出临界区
@@ -225,17 +240,24 @@ static void BSP_Init(void)
 	 * 优先级分组只需要分组一次即可，以后如果有其他的任务需要用到中断，
 	 * 都统一用这个优先级分组，千万不要再分组，切忌。
 	 */
-	NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
+	
+	/* 初始化系统时钟 */
+	SystemClock_Config();
+	
+	/* 配置优先级分组为4 */
+	HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
 	
 	/* LED 初始化 */
 	LED_GPIO_Config();
-
+	
+	/* KEY 初始化 */
+	EXTI_Key_Config();
+	
 	/* 串口初始化	*/
-	Debug_USART_Config();
-  
+	USART_Init();
+	
   /* 基本定时器初始化	*/
 	TIMx_Configuration();
-  
 }
 
 /********************************END OF FILE****************************/

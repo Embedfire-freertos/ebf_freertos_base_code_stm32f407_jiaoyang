@@ -3,13 +3,13 @@
   * @file    main.c
   * @author  fire
   * @version V1.0
-  * @date    2018-xx-xx
-  * @brief   FreeRTOS v9.0.0 + STM32 动态创建任务
+  * @date    2020-xx-xx
+  * @brief   FreeRTOS v9.0.0 + STM32 工程模版
   *********************************************************************
   * @attention
   *
   * 实验平台:野火 STM32全系列开发板 
-  * 论坛    :http://www.firebbs.cn
+  * 论坛    :http://www.embedfire.com
   * 淘宝    :https://fire-stm32.taobao.com
   *
   **********************************************************************
@@ -24,8 +24,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 /* 开发板硬件bsp头文件 */
-#include "bsp_led.h"
-#include "bsp_debug_usart.h"
+#include "board_init.h"
 
 /**************************** 任务句柄 ********************************/
 /* 
@@ -34,9 +33,9 @@
  * 这个句柄可以为NULL。
  */
  /* 创建任务句柄 */
-static TaskHandle_t AppTaskCreate_Handle = NULL;
+static TaskHandle_t AppTaskCreate_Handle;
 /* LED任务句柄 */
-static TaskHandle_t LED_Task_Handle = NULL;
+static TaskHandle_t LED_Task_Handle;		
 
 /********************************** 内核对象句柄 *********************************/
 /*
@@ -55,8 +54,7 @@ static TaskHandle_t LED_Task_Handle = NULL;
 /*
  * 当我们在写应用程序的时候，可能需要用到一些全局变量。
  */
-
-
+ 
 /*
 *************************************************************************
 *                             函数声明
@@ -79,22 +77,19 @@ static void BSP_Init(void);/* 用于初始化板载相关资源 */
 int main(void)
 {	
   BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
-
   /* 开发板硬件初始化 */
   BSP_Init();
-  printf("这是一个[野火]-STM32全系列开发板-FreeRTOS-动态创建任务!\r\n");
-   /* 创建AppTaskCreate任务 */
+  printf("这是一个[野火]-STM32全系列开发板-FreeRTOS-动态创建单任务!\r\n");
+   /* 创建 AppTaskCreate 任务 */
   xReturn = xTaskCreate((TaskFunction_t )AppTaskCreate,  /* 任务入口函数 */
                         (const char*    )"AppTaskCreate",/* 任务名字 */
                         (uint16_t       )512,  /* 任务栈大小 */
                         (void*          )NULL,/* 任务入口函数参数 */
                         (UBaseType_t    )1, /* 任务的优先级 */
                         (TaskHandle_t*  )&AppTaskCreate_Handle);/* 任务控制块指针 */ 
-  /* 启动任务调度 */           
-  if(pdPASS == xReturn)
+															
+	if(pdFAIL != xReturn)/* 创建成功 */
     vTaskStartScheduler();   /* 启动任务，开启调度 */
-  else
-    return -1;  
   
   while(1);   /* 正常不会执行到这里 */    
 }
@@ -109,9 +104,8 @@ int main(void)
 static void AppTaskCreate(void)
 {
   BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
-  
   taskENTER_CRITICAL();           //进入临界区
-  
+
   /* 创建LED_Task任务 */
   xReturn = xTaskCreate((TaskFunction_t )LED_Task, /* 任务入口函数 */
                         (const char*    )"LED_Task",/* 任务名字 */
@@ -119,9 +113,12 @@ static void AppTaskCreate(void)
                         (void*          )NULL,	/* 任务入口函数参数 */
                         (UBaseType_t    )2,	    /* 任务的优先级 */
                         (TaskHandle_t*  )&LED_Task_Handle);/* 任务控制块指针 */
-  if(pdPASS == xReturn)
-    printf("创建LED_Task任务成功!\r\n");
-  
+	
+	if(pdFAIL != xReturn)/* 创建成功 */
+		printf("LED_Task任务创建成功!\n");
+	else
+		printf("LED_Task任务创建失败!\n");
+	
   vTaskDelete(AppTaskCreate_Handle); //删除AppTaskCreate任务
   
   taskEXIT_CRITICAL();            //退出临界区
@@ -162,13 +159,18 @@ static void BSP_Init(void)
 	 * 优先级分组只需要分组一次即可，以后如果有其他的任务需要用到中断，
 	 * 都统一用这个优先级分组，千万不要再分组，切忌。
 	 */
-	NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
+	
+	/* 初始化系统时钟 */
+	SystemClock_Config();
+	
+	/* 配置优先级分组为4 */
+	HAL_NVIC_SetPriorityGrouping( NVIC_PRIORITYGROUP_4 );
 	
 	/* LED 初始化 */
 	LED_GPIO_Config();
 
 	/* 串口初始化	*/
-	Debug_USART_Config();
+	DEBUG_USART_Config();
   
 }
 
